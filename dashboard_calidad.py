@@ -161,37 +161,53 @@ for p in ax.patches:
 st.pyplot(fig)
 
 
+# --- Visualizaciones de Errores de Calidad (VERSIÓN CORREGIDA) ---
+st.markdown("---")
+st.markdown("### Visualización de Errores de Calidad")
+plt.style.use('seaborn-v0_8-talk')
 
+# Creamos dos columnas para poner los gráficos de manzana lado a lado
+col7, col8 = st.columns(2)
 
-# Visualizaciones de Errores de Calidad
-    # --- AJUSTE 3: Visualizaciones de Errores ---
-    st.markdown("### Visualización de Errores de Calidad")
-    plt.style.use('seaborn-v0_8-talk')
-    
-    col7, col8 = st.columns(2)
+with col7:
+    # Este código está correctamente indentado porque va DENTRO del bloque 'with col7'
+    st.markdown("##### Top 10 Áreas (AGEB-Manzana) por Errores")
+    top_10_manzana = df_manzana.head(10).copy()
+    top_10_manzana['etiqueta_area'] = top_10_manzana['ageb'].astype(str) + ' - ' + top_10_manzana['manzana'].astype(str)
+    data_plot_manzana = top_10_manzana.set_index('etiqueta_area').sort_values(by='total_errores', ascending=True)
+    fig1, ax1 = plt.subplots(figsize=(10, 6))
+    ax1.barh(data_plot_manzana.index, data_plot_manzana['total_errores'], color='#4a7ab5')
+    ax1.set_xlabel('Número Total de Errores')
+    plt.tight_layout()
+    st.pyplot(fig1)
 
-    with col7:
-        st.markdown("##### Top 10 Áreas (AGEB-Manzana) por Errores")
-        top_10_manzana = df_manzana.head(10).copy()
-        top_10_manzana['etiqueta_area'] = top_10_manzana['ageb'].astype(str) + ' - ' + top_10_manzana['manzana'].astype(str)
-        data_plot_manzana = top_10_manzana.set_index('etiqueta_area').sort_values(by='total_errores', ascending=True)
-        fig1, ax1 = plt.subplots(figsize=(10, 6)); ax1.barh(data_plot_manzana.index, data_plot_manzana['total_errores'], color='#4a7ab5'); ax1.set_xlabel('Número Total de Errores'); plt.tight_layout(); st.pyplot(fig1)
+with col8:
+    # Este código también está correctamente indentado
+    st.markdown("##### Desglose de Errores de Correo (Top 10 Áreas)")
+    email_error_cols = ['error_correo_vacio', 'error_dominio_correo']
+    data_plot_email = top_10_manzana.copy()
+    data_plot_email['total_email_errors'] = data_plot_email[email_error_cols].sum(axis=1)
+    data_plot_email = data_plot_email.set_index('etiqueta_area').sort_values(by='total_email_errors', ascending=True)
+    fig2, ax2 = plt.subplots(figsize=(10, 6))
+    data_plot_email[email_error_cols].plot(kind='barh', stacked=True, ax=ax2, color=['#d9534f', '#f0ad4e'])
+    ax2.set_xlabel('Número de Errores de Correo')
+    ax2.set_ylabel('')
+    ax2.legend(title='Tipo de Error', labels=['Correo Vacío', 'Dominio Incorrecto'])
+    plt.tight_layout()
+    st.pyplot(fig2)
 
-    with col8:
-        st.markdown("##### Desglose de Errores de Correo (Top 10 Áreas)")
-        email_error_cols = ['error_correo_vacio', 'error_dominio_correo']
-        data_plot_email = top_10_manzana.copy()
-        data_plot_email['total_email_errors'] = data_plot_email[email_error_cols].sum(axis=1)
-        data_plot_email = data_plot_email.set_index('etiqueta_area').sort_values(by='total_email_errors', ascending=True)
-        fig2, ax2 = plt.subplots(figsize=(10, 6)); data_plot_email[email_error_cols].plot(kind='barh', stacked=True, ax=ax2, color=['#d9534f', '#f0ad4e']); ax2.set_xlabel('Número de Errores de Correo'); ax2.set_ylabel(''); ax2.legend(title='Tipo de Error', labels=['Correo Vacío', 'Dominio Incorrecto']); plt.tight_layout(); st.pyplot(fig2)
+# Esta sección vuelve al nivel principal, sin indentación
+st.markdown("---")
+st.markdown("#### Top 10 Colonias por Total de Errores")
+top_10_colonias = df_colonia.head(10).set_index('colonia_estandarizada').sort_values(by='total_errores', ascending=True)
+fig3, ax3 = plt.subplots(figsize=(12, 7))
+ax3.barh(top_10_colonias.index, top_10_colonias['total_errores'], color='#5cb85c')
+ax3.set_xlabel('Número Total de Errores Identificados')
+plt.tight_layout()
+st.pyplot(fig3)
 
-    st.markdown("---")
-    st.markdown("#### Top 10 Colonias por Total de Errores")
-    top_10_colonias = df_colonia.head(10).set_index('colonia_estandarizada').sort_values(by='total_errores', ascending=True)
-    fig3, ax3 = plt.subplots(figsize=(12, 7)); ax3.barh(top_10_colonias.index, top_10_colonias['total_errores'], color='#5cb85c'); ax3.set_xlabel('Número Total de Errores Identificados'); plt.tight_layout(); st.pyplot(fig3)
-    
-    st.markdown("---")
-    st.markdown("### Explorador de Datos de Errores")
+st.markdown("---")
+st.markdown("### Explorador de Datos de Errores")
     if st.checkbox("Mostrar reporte detallado por AGEB y Manzana"):
         st.dataframe(df_manzana)
     if st.checkbox("Mostrar reporte detallado por Colonia"):
