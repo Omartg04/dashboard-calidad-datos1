@@ -112,4 +112,4 @@ else:
     if st.checkbox("Mostrar reporte detallado por AGEB y Manzana"):
         st.dataframe(df_manzana)
     if st.checkbox("Mostrar reporte detallado por Colonia"):
-        st.dataframe(df_colonia).
+        st.dataframe(df_colonia)
