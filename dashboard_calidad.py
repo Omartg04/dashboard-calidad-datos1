@@ -7,7 +7,7 @@ import io       # <--- NUEVA IMPORTACIÓN
 
 # --- 1. Configuración de la Página del Dashboard ---
 st.set_page_config(
-    page_title="Dashboard de Calidad de Datos Censo del Bienestar",
+    page_title="Dashboard de Calidad de Datos Censo del Bienestar al 20 junto 2025",
     page_icon="📊",
     layout="wide"
 )
@@ -82,6 +82,59 @@ else:
     col_c1, col_c2, col_c3, col_c4 = st.columns(4)
     col_c1.metric("Envíos Totales", f"{envios_campana}"); col_c2.metric("Tasa de Entrega", f"{tasa_entrega:.1f}%", f"{entregas_campana} entregados"); col_c3.metric("Tasa de Apertura", f"{tasa_apertura:.1f}%", f"{aperturas_campana} aperturas"); col_c4.metric("Tasa de Clics (CTR)", f"{tasa_clics_ctr:.1f}%", f"{clics_campana} clics")
     st.markdown("---")
+
+# --- NUEVO: Avances Preliminares en Carencias (Datos Fijos) ---
+st.markdown("---")
+st.markdown("### Avances Preliminares en Carencias (Datos de Referencia)")
+
+# 1. Crear un DataFrame con los datos fijos que proporcionaste
+data_carencias = {
+    'Tipo de Carencia': [
+        'Seguridad Social', 'Alimentación', 'Salud', 
+        'Educación', 'Calidad de la Vivienda', 'Servicios Básicos'
+    ],
+    'Porcentaje': [65, 39, 34, 22, 11, 2],
+    'Personas': [5856, 3528, 3080, 2021, 1035, 154]
+}
+df_carencias = pd.DataFrame(data_carencias)
+
+# 2. Crear la gráfica de barras horizontales para una visualización clara
+# Ordenamos los valores para que la barra más grande quede arriba
+df_carencias_sorted = df_carencias.sort_values(by='Porcentaje', ascending=True)
+
+fig, ax = plt.subplots(figsize=(10, 6))
+bars = ax.barh(df_carencias_sorted['Tipo de Carencia'], df_carencias_sorted['Porcentaje'], color='#6b4e8d')
+
+# Añadir títulos y mejorar la estética
+ax.set_title('Porcentaje de Personas por Tipo de Carencia Identificada', fontsize=16, fontweight='bold')
+ax.set_xlabel('Porcentaje (%)')
+ax.tick_params(axis='x', labelsize=10)
+ax.tick_params(axis='y', labelsize=10)
+
+# Opcional: Remover el borde superior y derecho para un look más limpio
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+
+# Añadir los valores de porcentaje directamente en las barras
+# El formato 'f'{p.get_width()}%' añade el símbolo de porcentaje
+for p in ax.patches:
+    width = p.get_width()
+    ax.text(width + 1, p.get_y() + p.get_height()/2.,
+            f'{width:.0f}%',
+            va='center')
+
+# Ajustar los límites del eje X para dar espacio a las etiquetas
+ax.set_xlim(0, max(df_carencias['Porcentaje']) * 1.1)
+
+plt.tight_layout()
+
+# 3. Mostrar la gráfica en Streamlit
+st.pyplot(fig)
+
+
+# 4. (Opcional) Mostrar la tabla de datos en un menú desplegable
+with st.expander("Ver datos detallados de carencias"):
+    st.dataframe(df_carencias.set_index('Tipo de Carencia'))
 
     # Visualizaciones de Errores de Calidad
     # --- AJUSTE 3: Visualizaciones de Errores ---
