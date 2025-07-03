@@ -9,28 +9,28 @@ st.set_page_config(
     page_icon="📊",
     layout="wide"
 )
-
 # --- 2. Función para Cargar Todos los Datos Necesarios ---
 @st.cache_data
-def cargar_todos_los_datos():
-    ruta_base = Path.cwd()
-    ruta_crudos = ruta_base / "01_datos_crudos"
-    ruta_maestros = ruta_base / "02_datos_maestros"
-    ruta_reportes = ruta_base / "03_reportes_calidad"
+def cargar_datos_desde_google_sheets():
+    # --- ¡ACCIÓN REQUERIDA! ---
+    # Pega aquí la URL de tu hoja de Google Sheets
+    SHEET_URL = "https://docs.google.com/spreadsheets/d/1vBVsk-9rxSaP47VXIZtahSb1sJsNSAkL/edit?gid=572200103#gid=572200103"
     
-    try:
-        ruta_reporte_excel = max(ruta_reportes.glob('*.xlsx'), key=lambda p: p.stat().st_mtime)
-        ruta_maestra_limpia = max(ruta_maestros.glob('*.csv'), key=lambda p: p.stat().st_mtime)
-        ruta_crudo_reciente = max(ruta_crudos.glob('*.csv'), key=lambda p: p.stat().st_mtime)
+    # Construimos las URLs para descargar cada hoja como CSV
+    url_manzana = SHEET_URL.replace('/edit#gid=', '/export?format=csv&gid=')
+    # Necesitarás el 'gid' de tu segunda hoja. Lo encuentras en la URL cuando haces clic en esa hoja.
+    SHEET_ID_COLONIA = "123456789" # <-- Reemplaza esto con el GID de tu hoja de colonias
+    url_colonia = SHEET_URL.split('/edit')[0] + f'/export?format=csv&gid={SHEET_ID_COLONIA}'
 
-        df_manzana = pd.read_excel(ruta_reporte_excel, sheet_name='Errores_por_AGEB_Manzana')
-        df_colonia = pd.read_excel(ruta_reporte_excel, sheet_name='Errores_por_Colonia')
-        df_crudo = pd.read_csv(ruta_crudo_reciente, low_memory=False)
-        df_limpio = pd.read_csv(ruta_maestra_limpia, low_memory=False)
-        
-        return df_manzana, df_colonia, df_crudo, df_limpio, ruta_reporte_excel.name
-    except (FileNotFoundError, ValueError):
-        return None, None, None, None, None
+    try:
+        df_manzana = pd.read_csv(url_manzana)
+        df_colonia = pd.read_csv(url_colonia)
+        # Para los KPIs, podrías necesitar subir también tus archivos crudos y limpios a otra hoja pública.
+        # Por simplicidad, aquí los cargaremos de forma estática o los omitiremos.
+        return df_manzana, df_colonia, "Reporte desde Google Sheets"
+    except Exception as e:
+        st.error(f"Error al cargar los datos desde Google Sheets: {e}")
+        return None, None, None
 
 # --- 3. Cargar los Datos ---
 df_manzana, df_colonia, df_crudo, df_limpio, nombre_reporte = cargar_todos_los_datos()
