@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from pathlib import Path
+import requests # <--- NUEVA IMPORTACIÓN
+import io       # <--- NUEVA IMPORTACIÓN
 
 # --- 1. Configuración de la Página del Dashboard ---
 st.set_page_config(
@@ -9,37 +12,37 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- 2. Función para Cargar Todos los Datos desde Google Sheets ---
-@st.cache_data # El caché es importante para no recargar los datos en cada interacción
+# 2. Función de Carga Mejorada (sin caché y usando 'requests')
+# Se eliminó @st.cache_data temporalmente para forzar la recarga
 def cargar_datos_desde_google_sheets():
-    # --- ¡ACCIÓN REQUERIDA! ---
-    # 1. Pega aquí la URL principal de tu hoja de Google Sheets (la que ves en el navegador)
-    SHEET_URL = "https://docs.google.com/spreadsheets/d/1R6tJg9t0qEzBcZuZvoA55kaevsr-UmKAguoPcBp48Ss/edit?gid=0#gid=0"
+    SHEET_ID = "1R6tJg9t0qEzBcZuZvoA55kaevsr-UmKAguoPcBp48Ss"
+    GID_MANZANA = "0"
+    GID_COLONIA = "557129763"
+    GID_CRUDOS = "2039831845"
+    GID_LIMPIOS = "901947724"
     
-    # 2. Reemplaza estos GIDs con los que anotaste de cada una de tus pestañas
-    GID_MANZANA = "#gid=0"
-    GID_COLONIA = "#gid=557129763"
-    GID_CRUDOS = "#gid=2039831845"
-    GID_LIMPIOS = "#gid=901947724"
-    # ------------------------------------
+    base_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
+    
+    def fetch_csv(gid):
+        url = f"{base_url}&gid={gid}"
+        try:
+            response = requests.get(url)
+            response.raise_for_status() # Lanza un error si la petición falla (ej. 401, 404)
+            # Usamos io.StringIO para que pandas lea el texto de la respuesta como si fuera un archivo
+            return pd.read_csv(io.StringIO(response.text), low_memory=False)
+        except requests.exceptions.RequestException as e:
+            st.error(f"Error de red al intentar cargar la hoja con GID {gid}: {e}")
+            return None
 
-    # Función auxiliar para construir la URL de descarga
-    def construir_url_csv(base_url, gid):
-        return f"{base_url.split('/edit')[0]}/export?format=csv&gid={gid}"
-    
-    try:
-        # Carga de todos los datos desde las URLs construidas
-        df_manzana = pd.read_csv(construir_url_csv(SHEET_URL, GID_MANZANA))
-        df_colonia = pd.read_csv(construir_url_csv(SHEET_URL, GID_COLONIA))
-        df_crudo = pd.read_csv(construir_url_csv(SHEET_URL, GID_CRUDOS))
-        df_limpio = pd.read_csv(construir_url_csv(SHEET_URL, GID_LIMPIOS))
-        
-        # El nombre del reporte ahora es estático
-        nombre_reporte = "Reporte desde Google Sheets"
-        
+    df_manzana = fetch_csv(GID_MANZANA)
+    df_colonia = fetch_csv(GID_COLONIA)
+    df_crudo = fetch_csv(GID_CRUDOS)
+    df_limpio = fetch_csv(GID_LIMPIOS)
+
+    if all(df is not None for df in [df_manzana, df_colonia, df_crudo, df_limpio]):
+        nombre_reporte = f"Reporte del G-Sheet ID: ...{SHEET_ID[-6:]}"
         return df_manzana, df_colonia, df_crudo, df_limpio, nombre_reporte
-    except Exception as e:
-        st.error(f"Error al cargar datos desde Google Sheets. Verifica las URLs y los GIDs. Error: {e}")
+    else:
         return None, None, None, None, None
 
 # --- 3. Cargar los Datos ---
