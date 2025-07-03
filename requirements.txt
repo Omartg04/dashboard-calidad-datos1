@@ -1,0 +1,5 @@
+pandas
+numpy
+matplotlib
+streamlit
+openpyxl  # Necesaria para que pandas lea archivos Excel
