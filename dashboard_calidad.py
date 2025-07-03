@@ -7,7 +7,7 @@ import io       # <--- NUEVA IMPORTACIÓN
 
 # --- 1. Configuración de la Página del Dashboard ---
 st.set_page_config(
-    page_title="Dashboard de Calidad de Datos Censo del Bienestar al 20 junto 2025",
+    page_title="Avances PAPE-Censo del Bienestar al 20 junto 2025",
     page_icon="📊",
     layout="wide"
 )
@@ -83,7 +83,8 @@ else:
     col_c1.metric("Envíos Totales", f"{envios_campana}"); col_c2.metric("Tasa de Entrega", f"{tasa_entrega:.1f}%", f"{entregas_campana} entregados"); col_c3.metric("Tasa de Apertura", f"{tasa_apertura:.1f}%", f"{aperturas_campana} aperturas"); col_c4.metric("Tasa de Clics (CTR)", f"{tasa_clics_ctr:.1f}%", f"{clics_campana} clics")
     st.markdown("---")
 
-# --- NUEVO: Avances Preliminares en Carencias (Datos Fijos) ---
+
+# --- NUEVO: Avances Preliminares en Carencias (Formato KPI) ---
 st.markdown("---")
 st.markdown("### Avances Preliminares en Carencias (Datos de Referencia)")
 
@@ -98,45 +99,71 @@ data_carencias = {
 }
 df_carencias = pd.DataFrame(data_carencias)
 
-# 2. Crear la gráfica de barras horizontales para una visualización clara
-# Ordenamos los valores para que la barra más grande quede arriba
+# 2. Crear la cuadrícula de KPIs en dos filas
+col1, col2, col3 = st.columns(3)
+col4, col5, col6 = st.columns(3)
+
+# Fila 1 de KPIs
+col1.metric(
+    label=df_carencias.iloc[0]['Tipo de Carencia'], 
+    value=f"{df_carencias.iloc[0]['Porcentaje']}%", 
+    delta=f"{df_carencias.iloc[0]['Personas']:,} personas",
+    delta_color="off" # El delta no indica cambio, solo es informativo
+)
+col2.metric(
+    label=df_carencias.iloc[1]['Tipo de Carencia'], 
+    value=f"{df_carencias.iloc[1]['Porcentaje']}%", 
+    delta=f"{df_carencias.iloc[1]['Personas']:,} personas",
+    delta_color="off"
+)
+col3.metric(
+    label=df_carencias.iloc[2]['Tipo de Carencia'], 
+    value=f"{df_carencias.iloc[2]['Porcentaje']}%", 
+    delta=f"{df_carencias.iloc[2]['Personas']:,} personas",
+    delta_color="off"
+)
+
+# Fila 2 de KPIs
+col4.metric(
+    label=df_carencias.iloc[3]['Tipo de Carencia'], 
+    value=f"{df_carencias.iloc[3]['Porcentaje']}%", 
+    delta=f"{df_carencias.iloc[3]['Personas']:,} personas",
+    delta_color="off"
+)
+col5.metric(
+    label=df_carencias.iloc[4]['Tipo de Carencia'], 
+    value=f"{df_carencias.iloc[4]['Porcentaje']}%", 
+    delta=f"{df_carencias.iloc[4]['Personas']:,} personas",
+    delta_color="off"
+)
+col6.metric(
+    label=df_carencias.iloc[5]['Tipo de Carencia'], 
+    value=f"{df_carencias.iloc[5]['Porcentaje']}%", 
+    delta=f"{df_carencias.iloc[5]['Personas']:,} personas",
+    delta_color="off"
+)
+
+
+# 3. Mantener la gráfica de barras para una vista comparativa
+st.markdown("") # Un pequeño espacio
 df_carencias_sorted = df_carencias.sort_values(by='Porcentaje', ascending=True)
-
-fig, ax = plt.subplots(figsize=(10, 6))
+fig, ax = plt.subplots(figsize=(12, 5)) # Hacemos la gráfica un poco menos alta
 bars = ax.barh(df_carencias_sorted['Tipo de Carencia'], df_carencias_sorted['Porcentaje'], color='#6b4e8d')
-
-# Añadir títulos y mejorar la estética
-ax.set_title('Porcentaje de Personas por Tipo de Carencia Identificada', fontsize=16, fontweight='bold')
+ax.set_title('Comparativa Visual del Porcentaje de Carencias', fontsize=16)
 ax.set_xlabel('Porcentaje (%)')
-ax.tick_params(axis='x', labelsize=10)
-ax.tick_params(axis='y', labelsize=10)
-
-# Opcional: Remover el borde superior y derecho para un look más limpio
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
-
-# Añadir los valores de porcentaje directamente en las barras
-# El formato 'f'{p.get_width()}%' añade el símbolo de porcentaje
+ax.set_xlim(0, max(df_carencias['Porcentaje']) * 1.1)
 for p in ax.patches:
     width = p.get_width()
-    ax.text(width + 1, p.get_y() + p.get_height()/2.,
-            f'{width:.0f}%',
-            va='center')
+    ax.text(width + 1, p.get_y() + p.get_height()/2., f'{width:.0f}%', va='center')
 
-# Ajustar los límites del eje X para dar espacio a las etiquetas
-ax.set_xlim(0, max(df_carencias['Porcentaje']) * 1.1)
-
-plt.tight_layout()
-
-# 3. Mostrar la gráfica en Streamlit
 st.pyplot(fig)
 
 
-# 4. (Opcional) Mostrar la tabla de datos en un menú desplegable
-with st.expander("Ver datos detallados de carencias"):
-    st.dataframe(df_carencias.set_index('Tipo de Carencia'))
 
-    # Visualizaciones de Errores de Calidad
+
+# Visualizaciones de Errores de Calidad
     # --- AJUSTE 3: Visualizaciones de Errores ---
     st.markdown("### Visualización de Errores de Calidad")
     plt.style.use('seaborn-v0_8-talk')
