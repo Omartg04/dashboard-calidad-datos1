@@ -1,90 +1,86 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-from pathlib import Path
 
 # --- 1. Configuración de la Página del Dashboard ---
 st.set_page_config(
-    page_title="Dashboard de Calidad de Datos Censo del Bienestar Álvaro Obregón",
+    page_title="Dashboard de Calidad de Datos Censo del Bienestar",
     page_icon="📊",
     layout="wide"
 )
-# --- 2. Función para Cargar Todos los Datos Necesarios ---
-@st.cache_data
+
+# --- 2. Función para Cargar Todos los Datos desde Google Sheets ---
+@st.cache_data # El caché es importante para no recargar los datos en cada interacción
 def cargar_datos_desde_google_sheets():
     # --- ¡ACCIÓN REQUERIDA! ---
-    # Pega aquí la URL de tu hoja de Google Sheets
-    SHEET_URL = "https://docs.google.com/spreadsheets/d/1vBVsk-9rxSaP47VXIZtahSb1sJsNSAkL/edit?gid=572200103#gid=572200103"
+    # 1. Pega aquí la URL principal de tu hoja de Google Sheets (la que ves en el navegador)
+    SHEET_URL = "https://docs.google.com/spreadsheets/d/1R6tJg9t0qEzBcZuZvoA55kaevsr-UmKAguoPcBp48Ss/edit?gid=0#gid=0"
     
-    # Construimos las URLs para descargar cada hoja como CSV
-    url_manzana = SHEET_URL.replace('/edit#gid=', '/export?format=csv&gid=')
-    # Necesitarás el 'gid' de tu segunda hoja. Lo encuentras en la URL cuando haces clic en esa hoja.
-    SHEET_ID_COLONIA = "123456789" # <-- Reemplaza esto con el GID de tu hoja de colonias
-    url_colonia = SHEET_URL.split('/edit')[0] + f'/export?format=csv&gid={SHEET_ID_COLONIA}'
+    # 2. Reemplaza estos GIDs con los que anotaste de cada una de tus pestañas
+    GID_MANZANA = "#gid=0"
+    GID_COLONIA = "#gid=557129763"
+    GID_CRUDOS = "#gid=2039831845"
+    GID_LIMPIOS = "#gid=901947724"
+    # ------------------------------------
 
+    # Función auxiliar para construir la URL de descarga
+    def construir_url_csv(base_url, gid):
+        return f"{base_url.split('/edit')[0]}/export?format=csv&gid={gid}"
+    
     try:
-        df_manzana = pd.read_csv(url_manzana)
-        df_colonia = pd.read_csv(url_colonia)
-        # Para los KPIs, podrías necesitar subir también tus archivos crudos y limpios a otra hoja pública.
-        # Por simplicidad, aquí los cargaremos de forma estática o los omitiremos.
-        return df_manzana, df_colonia, "Reporte desde Google Sheets"
+        # Carga de todos los datos desde las URLs construidas
+        df_manzana = pd.read_csv(construir_url_csv(SHEET_URL, GID_MANZANA))
+        df_colonia = pd.read_csv(construir_url_csv(SHEET_URL, GID_COLONIA))
+        df_crudo = pd.read_csv(construir_url_csv(SHEET_URL, GID_CRUDOS))
+        df_limpio = pd.read_csv(construir_url_csv(SHEET_URL, GID_LIMPIOS))
+        
+        # El nombre del reporte ahora es estático
+        nombre_reporte = "Reporte desde Google Sheets"
+        
+        return df_manzana, df_colonia, df_crudo, df_limpio, nombre_reporte
     except Exception as e:
-        st.error(f"Error al cargar los datos desde Google Sheets: {e}")
-        return None, None, None
+        st.error(f"Error al cargar datos desde Google Sheets. Verifica las URLs y los GIDs. Error: {e}")
+        return None, None, None, None, None
 
 # --- 3. Cargar los Datos ---
-df_manzana, df_colonia, df_crudo, df_limpio, nombre_reporte = cargar_todos_los_datos()
+df_manzana, df_colonia, df_crudo, df_limpio, nombre_reporte = cargar_datos_desde_google_sheets()
 
 # --- 4. Construcción de la Interfaz del Dashboard ---
-st.title("📊 Dashboard de Calidad de Datos en Campo")
+st.title("📊 Dashboard de Calidad de Datos Censo del Bienestar")
 
-# Primero, verificamos si los datos se cargaron correctamente
 if df_manzana is None:
-    st.error("No se encontró ningún archivo de reporte o de datos en las carpetas. Por favor, ejecuta el pipeline de limpieza primero.")
+    st.warning("No se pudieron cargar los datos. Por favor, revisa la configuración de URLs y GIDs en el script.")
 else:
-    # --- LÍNEA CLAVE PARA MOSTRAR EL NOMBRE DEL REPORTE ---
-    # Esta línea usa st.success para mostrar el mensaje en una caja verde, haciéndolo muy visible.
-    st.success(f"Mostrando análisis del reporte: **{nombre_reporte}**")
+    st.success(f"Mostrando análisis: **{nombre_reporte}**")
     
-    # --- KPIs de Avance de Captura vs Meta ---
+    # KPIs de Avance de Captura vs Meta
     st.markdown("### Avance de Captura vs Meta")
-    
     meta_registros = 16601
     conteo_registros = len(df_crudo)
     avance_registros = (conteo_registros / meta_registros) * 100
-    
     st.metric("Avance de Registros", f"{conteo_registros:,} / {meta_registros:,}", f"{avance_registros:.1f}%")
     st.progress(avance_registros / 100)
-    
     st.markdown("---")
 
-    # --- Impacto del Proceso de Limpieza ---
+    # Impacto del Proceso de Limpieza
     st.markdown("### Impacto del Proceso de Limpieza")
     conteo_limpio = len(df_limpio)
     registros_eliminados = conteo_registros - conteo_limpio
-    
     col4, col5, col6 = st.columns(3)
     col4.metric("Registros en Base Cruda", f"{conteo_registros:,}")
     col5.metric("Registros en Base Limpia", f"{conteo_limpio:,}", delta=f"-{registros_eliminados} registros", delta_color="inverse")
     col6.metric("Calidad de la Base", f"{((conteo_limpio/conteo_registros)*100):.1f}%")
-    
     st.markdown("---")
     
-    # --- KPIs de Campaña de Comunicación (Fijos) ---
+    # KPIs de Campaña de Comunicación (Fijos)
     st.markdown("### Resultados de Campaña de Comunicación (Referencia)")
     envios_campana = 718; entregas_campana = 628; aperturas_campana = 455; clics_campana = 61
-    tasa_entrega = (entregas_campana / envios_campana) * 100
-    tasa_apertura = (aperturas_campana / entregas_campana) * 100
-    tasa_clics_ctr = (clics_campana / entregas_campana) * 100
-    
+    tasa_entrega = (entregas_campana / envios_campana) * 100; tasa_apertura = (aperturas_campana / entregas_campana) * 100; tasa_clics_ctr = (clics_campana / entregas_campana) * 100
     col_c1, col_c2, col_c3, col_c4 = st.columns(4)
-    col_c1.metric("Envíos Totales", f"{envios_campana}")
-    col_c2.metric("Tasa de Entrega", f"{tasa_entrega:.1f}%", f"{entregas_campana} entregados")
-    col_c3.metric("Tasa de Apertura", f"{tasa_apertura:.1f}%", f"{aperturas_campana} aperturas")
-    col_c4.metric("Tasa de Clics (CTR)", f"{tasa_clics_ctr:.1f}%", f"{clics_campana} clics")
-
+    col_c1.metric("Envíos Totales", f"{envios_campana}"); col_c2.metric("Tasa de Entrega", f"{tasa_entrega:.1f}%", f"{entregas_campana} entregados"); col_c3.metric("Tasa de Apertura", f"{tasa_apertura:.1f}%", f"{aperturas_campana} aperturas"); col_c4.metric("Tasa de Clics (CTR)", f"{tasa_clics_ctr:.1f}%", f"{clics_campana} clics")
     st.markdown("---")
 
+    # Visualizaciones de Errores de Calidad
     # --- AJUSTE 3: Visualizaciones de Errores ---
     st.markdown("### Visualización de Errores de Calidad")
     plt.style.use('seaborn-v0_8-talk')
@@ -116,4 +112,4 @@ else:
     if st.checkbox("Mostrar reporte detallado por AGEB y Manzana"):
         st.dataframe(df_manzana)
     if st.checkbox("Mostrar reporte detallado por Colonia"):
-        st.dataframe(df_colonia)
+        st.dataframe(df_colonia).
