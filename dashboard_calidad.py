@@ -206,9 +206,16 @@ ax3.set_xlabel('Número Total de Errores Identificados')
 plt.tight_layout()
 st.pyplot(fig3)
 
+# --- Explorador de Datos de Errores (VERSIÓN CORREGIDA) ---
+# Esta sección debe estar al mismo nivel que los títulos principales, sin indentación.
+
 st.markdown("---")
 st.markdown("### Explorador de Datos de Errores")
-    if st.checkbox("Mostrar reporte detallado por AGEB y Manzana"):
-        st.dataframe(df_manzana)
-    if st.checkbox("Mostrar reporte detallado por Colonia"):
-        st.dataframe(df_colonia)
+
+if st.checkbox("Mostrar reporte detallado por AGEB y Manzana"):
+    # Esta línea está correctamente indentada porque depende del 'if'
+    st.dataframe(df_manzana)
+
+if st.checkbox("Mostrar reporte detallado por Colonia"):
+    # Esta línea también está correctamente indentada
+    st.dataframe(df_colonia)
