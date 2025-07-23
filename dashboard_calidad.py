@@ -1,10 +1,12 @@
 import streamlit as st
 import pandas as pd
-import numpy as np  # <-- AÑADIR ESTA LÍNEA
+import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 from datetime import datetime
 import re
+import requests # <-- AÑADIR ESTA LÍNEA
+import io       # <-- AÑADIR ESTA LÍNEA (la necesitarás también)
 
 
 # --- 1. Configuración de la Página del Dashboard ---
